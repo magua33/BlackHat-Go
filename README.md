@@ -6,4 +6,4 @@
 
 
 ## Note
- - [netcat](#chapter02/netcat/README.md)
+ - [netcat](chapter02/netcat/README.md)
