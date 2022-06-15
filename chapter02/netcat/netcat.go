@@ -69,6 +69,7 @@ func main() {
 		}
 	}
 
+	// 初始化netcat
 	nc := initNetcat(parser, buffer)
 	nc.run()
 }
@@ -88,6 +89,7 @@ type parser struct {
 	upload  string
 }
 
+// execute 执行传入命令
 func execute(cmd string) string {
 	cmd = strings.TrimSpace(cmd)
 	if cmd == "" {
@@ -97,6 +99,7 @@ func execute(cmd string) string {
 	cmdAndArgs := strings.Split(cmd, " ")
 	command := exec.Command(cmdAndArgs[0], cmdAndArgs[1:]...)
 
+	// 获取标准输出
 	closer, err := command.StdoutPipe()
 	if err != nil {
 		fmt.Println(err)
@@ -104,6 +107,7 @@ func execute(cmd string) string {
 
 	command.Start()
 
+	// 从标准输出中获取命令执行结果
 	rsp, err := io.ReadAll(closer)
 	if err != nil {
 		fmt.Println(err)
@@ -140,6 +144,7 @@ func (nc *netcat) send() {
 
 	defer nc.conn.Close()
 
+	// 如果缓冲区有数据，则发送
 	if nc.buffer != nil {
 		_, err := nc.conn.Write(nc.buffer)
 		if err != nil {
@@ -147,10 +152,12 @@ func (nc *netcat) send() {
 		}
 	}
 
+	// 接收target返回的数据
 	for {
 		recvLen := 1
 		response := []byte{}
 
+		// 读取数据
 		for recvLen > 0 {
 			var buf [4096]byte
 			n, err := nc.conn.Read(buf[:])
@@ -170,6 +177,7 @@ func (nc *netcat) send() {
 			fmt.Println(string(response))
 			fmt.Printf("> ")
 
+			//  读取用户输入，发送给target
 			reader := bufio.NewReader(os.Stdin)
 			buffer, _ := reader.ReadString('\n')
 			_, err = nc.conn.Write([]byte(buffer))
@@ -225,8 +233,7 @@ func (nc *netcat) handle() {
 			fmt.Println(err)
 		}
 	} else if nc.parser.upload != "" {
-		fmt.Println("uploading....")
-
+		// 接收数据
 		fileBuffer := []byte{}
 		for {
 			data := [4096]byte{}
@@ -235,13 +242,10 @@ func (nc *netcat) handle() {
 				fmt.Println(err)
 				break
 			}
-			fmt.Println("data:", data[:n])
-			fmt.Println("fileBuffer:", string(fileBuffer))
 			fileBuffer = append(fileBuffer, data[:n]...)
-			fmt.Println("fileBuffer:", string(fileBuffer))
-			fmt.Println("buffer:", fileBuffer)
 		}
 
+		// 将接收的数据写入文件
 		file, err := os.OpenFile(nc.parser.upload, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			fmt.Println(err)
@@ -268,12 +272,14 @@ func (nc *netcat) handle() {
 				fmt.Println(err)
 			}
 
+			// 接收数据，直到收到换行符
 			for !bytes.Contains(cmdBuffer, []byte{'\n'}) {
 				var recv [64]byte
 				n, _ := nc.conn.Read(recv[:])
 				cmdBuffer = append(cmdBuffer, recv[:n]...)
 			}
 
+			// 执行接收到的命令并返回执行结果
 			response := execute(string(cmdBuffer))
 			if response != "" {
 				nc.conn.Write([]byte(response))
