@@ -24,7 +24,9 @@ func main() {
 	remoteHost := os.Args[3]
 	remotePort := os.Args[4]
 
-	receiveFirst := os.Args[5]
+	receiveFirst := strings.Contains(os.Args[5], "True")
+
+	fmt.Println(localHost, localPort, remoteHost, remotePort, receiveFirst)
 
 	serverLoop(localHost, localPort, remoteHost, remotePort, receiveFirst)
 }
@@ -52,7 +54,7 @@ func hexDump(data string) string {
 
 		hexA := strings.Trim(fmt.Sprintf("%02X", word), "[]")
 		hexWidth := length * 4
-		line := fmt.Sprintf("%04x \t %s %*s  %s ", i, hexA, hexWidth-len(hexA), "-", printable)
+		line := fmt.Sprintf("%04x \t %s %*s  %s\n", i, hexA, hexWidth-len(hexA), "-", printable)
 		result += line
 	}
 
@@ -65,15 +67,15 @@ func hexDump(data string) string {
 func receiveFrom(conn net.Conn) []byte {
 	buffer := []byte{}
 
-	conn.SetDeadline(time.Now().Add(time.Second * 5))
+	conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 
 	for {
 		data := [4096]byte{}
 		n, err := conn.Read(data[:])
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println(err.Error())
-			}
+		if err != nil && err == io.EOF {
+			break
+		}
+		if n == 0 {
 			break
 		}
 		buffer = append(buffer, data[:n]...)
@@ -92,7 +94,7 @@ func responseHandler(buffer []byte) []byte {
 	return buffer
 }
 
-func serverLoop(localHost, localPort, remoteHost, remotePort, receiveFirst string) {
+func serverLoop(localHost, localPort, remoteHost, remotePort string, receiveFirst bool) {
 	server, err := net.Listen("tcp", localHost+":"+localPort)
 	if err != nil {
 		fmt.Println("problem on bind:", err.Error())
@@ -107,7 +109,7 @@ func serverLoop(localHost, localPort, remoteHost, remotePort, receiveFirst strin
 	for {
 		clientSocket, err := server.Accept()
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("Server Accept Error:", err.Error())
 			continue
 		}
 
@@ -121,14 +123,14 @@ func serverLoop(localHost, localPort, remoteHost, remotePort, receiveFirst strin
 	}
 }
 
-func proxyHandler(clientSocket net.Conn, remoteHost, remotePort, receiveFirst string) {
+func proxyHandler(clientSocket net.Conn, remoteHost, remotePort string, receiveFirst bool) {
 	remoteSocket, err := net.Dial("tcp", remoteHost+":"+remotePort)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("Net Dial Error:", err.Error())
 		return
 	}
 
-	if receiveFirst != "" {
+	if receiveFirst {
 		remoteBuffer := receiveFrom(remoteSocket)
 		hexDump(string(remoteBuffer))
 
