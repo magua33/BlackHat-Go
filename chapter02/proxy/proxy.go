@@ -20,12 +20,9 @@ func main() {
 
 	localHost := os.Args[1]
 	localPort := os.Args[2]
-
 	remoteHost := os.Args[3]
 	remotePort := os.Args[4]
-
 	receiveFirst := strings.Contains(os.Args[5], "True")
-
 	fmt.Println(localHost, localPort, remoteHost, remotePort, receiveFirst)
 
 	serverLoop(localHost, localPort, remoteHost, remotePort, receiveFirst)
@@ -66,7 +63,6 @@ func hexDump(data string) string {
 
 func receiveFrom(conn net.Conn) []byte {
 	buffer := []byte{}
-
 	conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 
 	for {
@@ -114,12 +110,11 @@ func serverLoop(localHost, localPort, remoteHost, remotePort string, receiveFirs
 		}
 
 		go func(clientSocket net.Conn) {
+			defer clientSocket.Close()
 			line := "> Received incoming connection from " + clientSocket.RemoteAddr().String()
 			fmt.Println(line)
-
 			proxyHandler(clientSocket, remoteHost, remotePort, receiveFirst)
 		}(clientSocket)
-
 	}
 }
 
@@ -129,6 +124,7 @@ func proxyHandler(clientSocket net.Conn, remoteHost, remotePort string, receiveF
 		fmt.Println("Net Dial Error:", err.Error())
 		return
 	}
+	defer remoteSocket.Close()
 
 	if receiveFirst {
 		remoteBuffer := receiveFrom(remoteSocket)
@@ -164,8 +160,6 @@ func proxyHandler(clientSocket net.Conn, remoteHost, remotePort string, receiveF
 		}
 
 		if len(localBuffer) == 0 || len(remoteBuffer) == 0 {
-			clientSocket.Close()
-			remoteSocket.Close()
 			fmt.Println("[*] No more data. Closing connections.")
 			break
 		}
