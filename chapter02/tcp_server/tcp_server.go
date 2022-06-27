@@ -20,8 +20,8 @@ func TCPServer() {
 		fmt.Println(err)
 		return
 	}
-	defer listener.Close()
 
+	defer listener.Close()
 	fmt.Printf("[*] Listening on %s%s\n", IP, Port)
 
 	listener = netutil.LimitListener(listener, 5)
