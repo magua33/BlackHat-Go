@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"syscall"
 
 	"golang.org/x/crypto/ssh"
@@ -11,10 +13,10 @@ import (
 func main() {
 	var ip, port, user, passwd, cmd string
 
-	fmt.Print("Username:")
+	fmt.Print("Username: ")
 	fmt.Scan(&user)
 
-	fmt.Print("Password:")
+	fmt.Print("Password: ")
 	bytepw, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		fmt.Println("ReadPassword Error:", err)
@@ -23,14 +25,18 @@ func main() {
 	passwd = string(bytepw)
 	fmt.Println()
 
-	fmt.Print("Enter server IP:")
+	fmt.Print("Enter server IP: ")
 	fmt.Scan(&ip)
 
-	fmt.Print("Enter port or <CR>:")
-	fmt.Scan(&port)
+	fmt.Print("Enter port or <CR>: ")
+	fmt.Scanln(&port)
+	if port == "" {
+		port = "22"
+	}
 
-	fmt.Print("Enter command or <CR>:")
-	fmt.Scan(&cmd)
+	fmt.Print("Enter command or <CR>: ")
+	reader := bufio.NewReader(os.Stdin)
+	cmd, _ = reader.ReadString('\n')
 
 	fmt.Println("ip:", ip, "port:", port, "user:", user, "passwd:", "******", "cmd:", cmd)
 
