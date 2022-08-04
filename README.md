@@ -5,6 +5,6 @@
 #### 《Python黑帽子 黑客与渗透测试编程之道》第2版，Go版本的源代码。
 
 
-## Note
+## Special Note
  - [netcat](chapter02/netcat/README.md)
  - [sniffer](chapter03/sniffer/README.md)
