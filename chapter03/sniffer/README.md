@@ -1,4 +1,7 @@
 windows  socket相关的调用请使用WSA*** 或 golang.org/x/sys/windows
+windows 需要关闭防火墙(Disable Firewall)
+
+
 
 ListenPacket listens for incoming ICMP packets addressed to address. See net.Dial for the syntax of address.
 For non-privileged datagram-oriented ICMP endpoints, network must be "udp4" or "udp6".

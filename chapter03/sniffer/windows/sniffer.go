@@ -7,63 +7,74 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-const SIO_RCVALL = windows.IOC_IN | windows.IOC_VENDOR | 1
+const (
+	IP_HDRINCL = 0x2
+	SIO_RCVALL = windows.IOC_IN | windows.IOC_VENDOR | 1
+	RCVALL_OFF = 0
+	RCVALL_ON  = 1
+)
+
+var ADDR = [4]byte{192, 168, 31, 91}
 
 func main() {
-	var wsaData windows.WSAData
-	err := windows.WSAStartup(2<<16+2, &wsaData)
+	var d windows.WSAData
+	err := windows.WSAStartup(uint32(0x202), &d)
 	if err != nil {
-		fmt.Println("Windows WSAStartup:", err)
+		fmt.Println("WSAStartup error:", err)
 		return
 	}
 
 	fd, err := windows.Socket(windows.AF_INET, windows.SOCK_RAW, windows.IPPROTO_IP)
 	if err != nil {
-		fmt.Println("Windows Socket:", err)
+		fmt.Println("Socket open error:", err)
+		return
+	}
+	defer windows.Closesocket(fd)
+
+	sa := windows.SockaddrInet4{
+		Port: 0,
+		Addr: ADDR,
+	}
+
+	err = windows.Bind(fd, &sa)
+	if err != nil {
+		fmt.Println("Socket bind error:", err)
 		return
 	}
 
-	la := new(windows.SockaddrInet4)
-	la.Port = int(0)
-	err = windows.Bind(fd, la)
+	err = windows.SetsockoptInt(fd, windows.IPPROTO_IP, IP_HDRINCL, 1)
 	if err != nil {
-		fmt.Println("Windows Bind:", err)
+		fmt.Println("SetsockoptInt error:", err)
 		return
 	}
 
-	// var aOptVal bool = true
-	// err = windows.Setsockopt(fd, windows.IPPROTO_IP, windows.IP_HDRINCL, (*byte)(unsafe.Pointer(&aOptVal)), int32(unsafe.Sizeof(aOptVal)))
-	err = windows.SetsockoptInt(fd, windows.IPPROTO_IP, windows.IP_HDRINCL, 1)
+	unused := uint32(0)
+	flag := uint32(RCVALL_ON)
+	size := uint32(unsafe.Sizeof(flag))
+	err = windows.WSAIoctl(fd, SIO_RCVALL, (*byte)(unsafe.Pointer(&flag)), size, nil, 0, &unused, nil, 0)
 	if err != nil {
-		fmt.Println("Windows Setsockopt:", err)
+		fmt.Println("WSAIoctl error", err)
 		return
-	}
-
-	inbuf := uint32(1)
-	sizebuf := uint32(unsafe.Sizeof(inbuf))
-	ret := uint32(0)
-	err = windows.WSAIoctl(fd, SIO_RCVALL, (*byte)(unsafe.Pointer(&inbuf)), sizebuf, nil, 0, &ret, nil, 0)
-	if err != nil {
-		fmt.Println("Windows WSAIoctl:", err)
 	}
 
 	data := make([]byte, 65535)
-	n, addr, err := windows.Recvfrom(fd, data, 0)
+	n, from, err := windows.Recvfrom(fd, data, 0)
 	if err != nil {
 		fmt.Println("Windows Recvfrom:", err)
-	}
-	fmt.Println("data:", string(data[:n]))
-	fmt.Println("addr:", addr)
-
-	// 关闭
-	err = windows.Closesocket(fd)
-	if err != nil {
-		fmt.Println("Windows Closesocket:", err)
 		return
 	}
-	err = windows.WSACleanup()
+
+	addr := from.(*(windows.SockaddrInet4))
+	host := fmt.Sprintf("%v.%v.%v.%v", addr.Addr[0], addr.Addr[1], addr.Addr[2], addr.Addr[3])
+	fmt.Println("data:", string(data[:n]))
+	fmt.Printf("host: %v port: %d \n", host, addr.Port)
+
+	unused = uint32(0)
+	flag = uint32(RCVALL_OFF)
+	size = uint32(unsafe.Sizeof(flag))
+	err = windows.WSAIoctl(fd, SIO_RCVALL, (*byte)(unsafe.Pointer(&flag)), size, nil, 0, &unused, nil, 0)
 	if err != nil {
-		fmt.Println("Windows WSACleanup:", err)
+		fmt.Println("WSAIoctl error", err)
 		return
 	}
 }

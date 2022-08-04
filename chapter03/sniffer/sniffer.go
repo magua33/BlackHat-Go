@@ -8,11 +8,18 @@ import (
 
 func main() {
 	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println("icmp listen error:", err)
+		return
+	}
 
 	buf := make([]byte, 1024)
-	n, addr, _ := conn.ReadFrom(buf)
-	fmt.Println(string(buf[:n]))
+	n, addr, err := conn.ReadFrom(buf)
+	if err != nil {
+		fmt.Println("recv error:", err)
+		return
+	}
+	fmt.Printf("%v\n", buf[:n])
 	fmt.Println(addr)
 }
 
