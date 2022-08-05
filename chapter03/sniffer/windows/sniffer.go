@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	_ "golang.org/x/sys/windows"
+	"golang.org/x/sys/windows"
 )
 
 const (
