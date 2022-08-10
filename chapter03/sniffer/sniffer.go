@@ -1,4 +1,4 @@
-package main
+package sniffer
 
 import (
 	"fmt"
@@ -6,20 +6,24 @@ import (
 	"golang.org/x/net/icmp"
 )
 
-func main() {
-	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
+// sniffer 一个简易的嗅探器
+// host 监听的主机ip
+func sniffer(host string) {
+	// 侦听传入的icmp数据包
+	conn, err := icmp.ListenPacket("ip4:icmp", host)
 	if err != nil {
 		fmt.Println("icmp listen error:", err)
 		return
 	}
 
+	// 读取一个数据包
 	buf := make([]byte, 1024)
 	n, addr, err := conn.ReadFrom(buf)
 	if err != nil {
 		fmt.Println("recv error:", err)
 		return
 	}
-	fmt.Printf("%v\n", buf[:n])
+	fmt.Println(string(buf[:n]))
 	fmt.Println(addr)
 }
 

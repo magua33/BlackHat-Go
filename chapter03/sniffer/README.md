@@ -1,4 +1,4 @@
-windows  socket相关的调用请使用WSA*** 或 golang.org/x/sys/windows
+windows  socket相关的调用请使用WSA*** 或 golang.org/x/sys/windows or winpcap
 windows 需要关闭防火墙(Disable Firewall)
 
 

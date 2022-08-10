@@ -6,7 +6,7 @@ import (
 )
 
 func UDPClient() {
-	targetHost := "127.0.0.1"
+	targetHost := "192.168.31.44"
 	targetPort := ":9999"
 
 	conn, err := net.Dial("udp", targetHost+targetPort)

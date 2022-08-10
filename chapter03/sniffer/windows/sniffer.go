@@ -1,4 +1,4 @@
-package main
+package windows
 
 import (
 	"fmt"
@@ -14,9 +14,7 @@ const (
 	RCVALL_ON  = 1
 )
 
-var ADDR = [4]byte{192, 168, 31, 91}
-
-func main() {
+func sniffer(ADDR []byte) {
 	var d windows.WSAData
 	err := windows.WSAStartup(uint32(0x202), &d)
 	if err != nil {
@@ -24,7 +22,7 @@ func main() {
 		return
 	}
 
-	fd, err := windows.Socket(windows.AF_INET, windows.SOCK_RAW, windows.IPPROTO_IP)
+	fd, err := windows.Socket(windows.AF_INET, windows.SOCK_RAW, windows.IPPROTO_ICMP)
 	if err != nil {
 		fmt.Println("Socket open error:", err)
 		return
